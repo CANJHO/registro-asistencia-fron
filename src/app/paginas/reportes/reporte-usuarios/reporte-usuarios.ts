@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/api.config';
+import { API_BASE_URL } from '../../../../config/api.config';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
