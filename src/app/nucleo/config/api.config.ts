@@ -1,4 +1,4 @@
 export const API_BASE_URL =
   window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
-    : 'https://registro-asistencia-api-04yz.onrender.com';
+    : 'https://registro-asistencia-api-o4yz.onrender.com';
