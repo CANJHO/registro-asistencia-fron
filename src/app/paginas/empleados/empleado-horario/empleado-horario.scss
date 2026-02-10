@@ -696,3 +696,22 @@
     transform: none;
   }
 }
+/* ✅ FECHA SELECCIONADA (PANEL DERECHO) */
+.ex-fecha-seleccionada {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.7rem;
+
+  background: rgba(246, 195, 38, 0.10);
+  border: 1px solid rgba(246, 195, 38, 0.35);
+  color: #f6e6a5;
+  font-size: 0.82rem;
+
+  strong {
+    color: #f6c326;
+    font-weight: 700;
+  }
+}
