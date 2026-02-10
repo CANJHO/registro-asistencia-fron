@@ -171,16 +171,18 @@
 
         <ng-container *ngIf="!exCargandoDia">
 
-          <!-- ✅ NUEVO: FECHA SELECCIONADA (SIEMPRE VISIBLE) -->
+          <!-- ✅ SIEMPRE: FECHA SELECCIONADA -->
           <div class="ex-fecha-seleccionada">
             Fecha seleccionada: <strong>{{ formatFechaUI(exFecha) }}</strong>
           </div>
 
+          <!-- ✅ SI NO HAY EXCEPCIÓN: SOLO MENSAJE -->
           <div *ngIf="!exActual" class="ex-estado__sin">
             <h4>Sin excepción registrada</h4>
             <p>Para la fecha seleccionada aplica el horario semanal normal.</p>
           </div>
 
+          <!-- ✅ SI HAY EXCEPCIÓN: DATOS -->
           <div *ngIf="exActual" class="ex-estado__con">
             <h4>Excepción registrada</h4>
             <div class="ex-chip">{{ exActual.tipo }}</div>
@@ -209,6 +211,7 @@
               Eliminar excepción
             </button>
           </div>
+
         </ng-container>
       </div>
     </div>
