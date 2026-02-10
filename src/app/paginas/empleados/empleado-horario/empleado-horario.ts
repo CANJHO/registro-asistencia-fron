@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
@@ -9,7 +9,7 @@ import { ServicioHorarios } from '../../../nucleo/servicios/servicio-horarios';
 import { ServicioEmpleados } from '../../../nucleo/servicios/servicio-empleados';
 
 interface DiaHorarioUI {
-  dia: number;
+  dia: number;                 // 1 = Lunes ... 7 = Domingo
   nombreDia: string;
   es_descanso: boolean;
   hora_inicio: string | null;
@@ -43,7 +43,7 @@ export class EmpleadoHorarioComponent implements OnInit {
   // ✅ Fecha local (NO UTC)
   fechaReferencia = this.todayKey();
 
-  // Semana
+  // Semana en formato “calendario”
   semana: DiaHorarioUI[] = [];
 
   readonly diasSemana = [
@@ -59,6 +59,7 @@ export class EmpleadoHorarioComponent implements OnInit {
   // ==========================
   // EXCEPCIONES (UI)
   // ==========================
+  // ✅ Fecha local (NO UTC)
   exFecha: string = this.todayKey();
   exTipo: string = 'Horario especial';
   exEsLaborable: boolean = true;
@@ -68,11 +69,7 @@ export class EmpleadoHorarioComponent implements OnInit {
 
   exCargandoDia = false;
   exGuardando = false;
-  exActual: any | null = null;
-
-  // ✅ LISTA (para panel derecho)
-  exListaCargando = false;
-  exLista: any[] = [];
+  exActual: any | null = null;     // excepción existente para esa fecha (si hay)
 
   constructor(
     private ruta: ActivatedRoute,
@@ -81,6 +78,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     private servicioEmpleados: ServicioEmpleados,
   ) {}
 
+  // ✅ Helpers de fecha (evitan bug de -1 día)
   private todayKey(): string {
     const d = new Date();
     const y = d.getFullYear();
@@ -89,15 +87,17 @@ export class EmpleadoHorarioComponent implements OnInit {
     return `${y}-${m}-${day}`;
   }
 
+  // ✅ Mostrar YYYY-MM-DD como dd/MM/yyyy sin DatePipe (sin timezone)
   formatFechaUI(fecha?: string | null): string {
     if (!fecha || typeof fecha !== 'string') return '';
+    // espera YYYY-MM-DD
     const m = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!m) return fecha;
     return `${m[3]}/${m[2]}/${m[1]}`;
   }
 
   ngOnInit(): void {
-    const id = this.ruta.snapshot.paramMap.get('id');
+    const id = this.ruta.snapshot.paramMap.get('id');   // asumimos ruta /panel/empleados/:id/horario
     if (!id) {
       this.router.navigate(['/panel/empleados']);
       return;
@@ -105,15 +105,17 @@ export class EmpleadoHorarioComponent implements OnInit {
 
     this.empleadoId = id;
 
+    // Inicializamos la semana por defecto (todo descanso)
     this.inicializarSemana();
+
+    // Cargamos datos del empleado (para mostrar arriba)
     this.cargarResumenEmpleado();
+
+    // Cargamos horario vigente para la fecha actual
     this.cargarHorarioVigente();
 
-    // ✅ Cargar excepción del día actual (solo para tener exActual si lo necesitas)
+    // Cargamos info de excepción para la fecha actual
     this.cargarExcepcionDelDia();
-
-    // ✅ Cargar LISTA de excepciones registradas (panel derecho)
-    this.cargarListaExcepciones();
   }
 
   private inicializarSemana() {
@@ -131,8 +133,12 @@ export class EmpleadoHorarioComponent implements OnInit {
 
   private cargarResumenEmpleado() {
     this.servicioEmpleados.obtenerFicha(this.empleadoId).subscribe({
-      next: (emp) => (this.empleadoResumen = emp),
-      error: (err) => console.warn('No se pudo cargar resumen de empleado en módulo horario', err),
+      next: (emp) => {
+        this.empleadoResumen = emp;
+      },
+      error: (err) => {
+        console.warn('No se pudo cargar resumen de empleado en módulo horario', err);
+      },
     });
   }
 
@@ -144,7 +150,9 @@ export class EmpleadoHorarioComponent implements OnInit {
       .vigente(this.empleadoId, this.fechaReferencia)
       .pipe(finalize(() => (this.cargando = false)))
       .subscribe({
-        next: (rows) => this.mapearSemanaDesdeBackend(rows || []),
+        next: (rows) => {
+          this.mapearSemanaDesdeBackend(rows || []);
+        },
         error: (err) => {
           console.error('Error cargando horario vigente', err);
           this.errorCarga = true;
@@ -164,7 +172,9 @@ export class EmpleadoHorarioComponent implements OnInit {
 
     const porDia: Record<number, any> = {};
     for (const r of rows) {
-      if (r.dia_semana) porDia[r.dia_semana] = r;
+      if (r.dia_semana) {
+        porDia[r.dia_semana] = r;
+      }
     }
 
     this.semana = this.semana.map(item => {
@@ -183,6 +193,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     });
   }
 
+  // Alternar descanso / laborable para un día
   toggleDescanso(dia: DiaHorarioUI) {
     dia.es_descanso = !dia.es_descanso;
     if (dia.es_descanso) {
@@ -193,6 +204,9 @@ export class EmpleadoHorarioComponent implements OnInit {
     }
   }
 
+  // ==========================
+  // VALIDACIÓN SEMANA
+  // ==========================
   private validarSemana(): string[] {
     const errores: string[] = [];
 
@@ -232,6 +246,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     return errores;
   }
 
+  // Guardar la semana en el backend como nueva vigencia
   guardarSemana() {
     if (this.guardando) return;
 
@@ -292,10 +307,44 @@ export class EmpleadoHorarioComponent implements OnInit {
   }
 
   // ==========================
+  // HISTORIAL
+  // ==========================
+  toggleHistorial() {
+    if (this.mostrandoHistorial) {
+      this.mostrandoHistorial = false;
+      return;
+    }
+
+    this.mostrandoHistorial = true;
+    if (this.historial.length > 0) return;
+
+    this.cargandoHistorial = true;
+
+    this.servicioHorarios
+      .historial(this.empleadoId)
+      .pipe(finalize(() => (this.cargandoHistorial = false)))
+      .subscribe({
+        next: (rows) => {
+          this.historial = rows || [];
+        },
+        error: (err) => {
+          console.error('Error cargando historial de horarios', err);
+          this.mostrandoHistorial = false;
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo cargar el historial',
+            text: 'Ocurrió un error al obtener el historial de horarios.',
+            background: '#111',
+            color: '#f5f5f5',
+          });
+        },
+      });
+  }
+
+  // ==========================
   // EXCEPCIONES
   // ==========================
   onCambioFechaExcepcion() {
-    // solo carga el detalle de esa fecha (no lista)
     this.cargarExcepcionDelDia();
   }
 
@@ -304,6 +353,7 @@ export class EmpleadoHorarioComponent implements OnInit {
 
     this.exCargandoDia = true;
 
+    // ✅ ya retorna excepcion del día (backend corrigido)
     this.servicioHorarios
       .dia(this.empleadoId, this.exFecha)
       .pipe(finalize(() => (this.exCargandoDia = false)))
@@ -330,35 +380,6 @@ export class EmpleadoHorarioComponent implements OnInit {
           this.exActual = null;
         },
       });
-  }
-
-  // ✅ LISTA: carga todas las excepciones del empleado (panel derecho)
-  private cargarListaExcepciones() {
-    if (!this.empleadoId) return;
-
-    this.exListaCargando = true;
-
-    this.servicioHorarios
-      .listarExcepciones(this.empleadoId) // 👈 este método debe existir en el servicio
-      .pipe(finalize(() => (this.exListaCargando = false)))
-      .subscribe({
-        next: (rows) => {
-          this.exLista = (rows || []).slice().sort((a: any, b: any) => {
-            return String(a.fecha).localeCompare(String(b.fecha));
-          });
-        },
-        error: (err) => {
-          console.error('Error cargando lista de excepciones', err);
-          this.exLista = [];
-        },
-      });
-  }
-
-  // ✅ click en lista derecha: carga esa fecha en el formulario
-  seleccionarExcepcionEnLista(ex: any) {
-    if (!ex?.fecha) return;
-    this.exFecha = ex.fecha;        // carga fecha
-    this.onCambioFechaExcepcion();  // carga detalle (si quieres ver/editar/eliminar)
   }
 
   guardarExcepcion() {
@@ -411,7 +432,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     }
 
     const payload = {
-      fecha: this.exFecha,
+      fecha: this.exFecha, // ✅ string YYYY-MM-DD
       tipo: this.exTipo,
       es_laborable: this.exEsLaborable,
       hora_inicio: this.exEsLaborable ? this.exHoraInicio : null,
@@ -433,10 +454,7 @@ export class EmpleadoHorarioComponent implements OnInit {
             background: '#111',
             color: '#f5f5f5',
           });
-
-          // ✅ refrescar detalle y LISTA derecha
           this.cargarExcepcionDelDia();
-          this.cargarListaExcepciones();
         },
         error: (err) => {
           console.error('Error guardando excepción', err);
@@ -481,10 +499,7 @@ export class EmpleadoHorarioComponent implements OnInit {
               color: '#f5f5f5',
             });
             this.exActual = null;
-
-            // ✅ refrescar detalle y LISTA derecha
             this.cargarExcepcionDelDia();
-            this.cargarListaExcepciones();
           },
           error: (err) => {
             console.error('Error eliminando excepción', err);
@@ -500,6 +515,9 @@ export class EmpleadoHorarioComponent implements OnInit {
     });
   }
 
+  // ==========================
+  // NAVEGACIÓN
+  // ==========================
   volverAEmpleado() {
     this.router.navigate(['/panel/empleados', this.empleadoId]);
   }
