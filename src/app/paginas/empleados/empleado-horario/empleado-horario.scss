@@ -718,3 +718,67 @@
     font-weight: 700;
   }
 }
+/* =========================
+   LISTA DERECHA (EXCEPCIONES)
+   ========================= */
+
+.ex-lista-titulo {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  color: #f6c326;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ex-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.ex-item {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(246, 195, 38, 0.08);
+    border-color: rgba(246, 195, 38, 0.35);
+  }
+}
+
+.ex-item__fecha {
+  font-weight: 700;
+  color: #f6e6a5;
+  font-size: 0.85rem;
+}
+
+.ex-item__tipo {
+  color: #e0e0e0;
+  font-size: 0.85rem;
+}
+
+.ex-item__badge {
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.45);
+  color: #2ecc71;
+}
+
+.ex-item__badge.no-laborable {
+  background: rgba(231, 76, 60, 0.12);
+  border: 1px solid rgba(231, 76, 60, 0.45);
+  color: #ffb4b4;
+}
