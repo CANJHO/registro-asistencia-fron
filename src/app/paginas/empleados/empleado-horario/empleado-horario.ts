@@ -40,8 +40,8 @@ export class EmpleadoHorarioComponent implements OnInit {
   cargandoHistorial = false;
   historial: any[] = [];
 
-  // Fecha de referencia de la vigencia
-  fechaReferencia = new Date().toISOString().slice(0, 10);
+  // ✅ Fecha local (NO UTC)
+  fechaReferencia = this.todayKey();
 
   // Semana en formato “calendario”
   semana: DiaHorarioUI[] = [];
@@ -59,7 +59,8 @@ export class EmpleadoHorarioComponent implements OnInit {
   // ==========================
   // EXCEPCIONES (UI)
   // ==========================
-  exFecha: string = new Date().toISOString().slice(0, 10);
+  // ✅ Fecha local (NO UTC)
+  exFecha: string = this.todayKey();
   exTipo: string = 'Horario especial';
   exEsLaborable: boolean = true;
   exHoraInicio: string | null = null;
@@ -75,8 +76,25 @@ export class EmpleadoHorarioComponent implements OnInit {
     private router: Router,
     private servicioHorarios: ServicioHorarios,
     private servicioEmpleados: ServicioEmpleados,
-    
   ) {}
+
+  // ✅ Helpers de fecha (evitan bug de -1 día)
+  private todayKey(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // ✅ Mostrar YYYY-MM-DD como dd/MM/yyyy sin DatePipe (sin timezone)
+  formatFechaUI(fecha?: string | null): string {
+    if (!fecha || typeof fecha !== 'string') return '';
+    // espera YYYY-MM-DD
+    const m = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return fecha;
+    return `${m[3]}/${m[2]}/${m[1]}`;
+  }
 
   ngOnInit(): void {
     const id = this.ruta.snapshot.paramMap.get('id');   // asumimos ruta /panel/empleados/:id/horario
@@ -117,7 +135,6 @@ export class EmpleadoHorarioComponent implements OnInit {
     this.servicioEmpleados.obtenerFicha(this.empleadoId).subscribe({
       next: (emp) => {
         this.empleadoResumen = emp;
-        
       },
       error: (err) => {
         console.warn('No se pudo cargar resumen de empleado en módulo horario', err);
@@ -128,16 +145,10 @@ export class EmpleadoHorarioComponent implements OnInit {
   cargarHorarioVigente() {
     this.cargando = true;
     this.errorCarga = false;
-    
 
     this.servicioHorarios
       .vigente(this.empleadoId, this.fechaReferencia)
-      .pipe(
-        finalize(() => {
-          this.cargando = false;
-          
-        }),
-      )
+      .pipe(finalize(() => (this.cargando = false)))
       .subscribe({
         next: (rows) => {
           this.mapearSemanaDesdeBackend(rows || []);
@@ -200,9 +211,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     const errores: string[] = [];
 
     for (const d of this.semana) {
-      if (d.es_descanso) {
-        continue;
-      }
+      if (d.es_descanso) continue;
 
       const t1Inicio = d.hora_inicio;
       const t1Fin = d.hora_fin;
@@ -239,9 +248,7 @@ export class EmpleadoHorarioComponent implements OnInit {
 
   // Guardar la semana en el backend como nueva vigencia
   guardarSemana() {
-    if (this.guardando) {
-      return;
-    }
+    if (this.guardando) return;
 
     const errores = this.validarSemana();
     if (errores.length > 0) {
@@ -271,16 +278,10 @@ export class EmpleadoHorarioComponent implements OnInit {
     };
 
     this.guardando = true;
-    
 
     this.servicioHorarios
       .setSemana(this.empleadoId, payload)
-      .pipe(
-        finalize(() => {
-          this.guardando = false;
-          
-        }),
-      )
+      .pipe(finalize(() => (this.guardando = false)))
       .subscribe({
         next: () => {
           Swal.fire({
@@ -315,22 +316,13 @@ export class EmpleadoHorarioComponent implements OnInit {
     }
 
     this.mostrandoHistorial = true;
-
-    if (this.historial.length > 0) {
-      return;
-    }
+    if (this.historial.length > 0) return;
 
     this.cargandoHistorial = true;
-    
 
     this.servicioHorarios
       .historial(this.empleadoId)
-      .pipe(
-        finalize(() => {
-          this.cargandoHistorial = false;
-          
-        }),
-      )
+      .pipe(finalize(() => (this.cargandoHistorial = false)))
       .subscribe({
         next: (rows) => {
           this.historial = rows || [];
@@ -352,7 +344,6 @@ export class EmpleadoHorarioComponent implements OnInit {
   // ==========================
   // EXCEPCIONES
   // ==========================
-
   onCambioFechaExcepcion() {
     this.cargarExcepcionDelDia();
   }
@@ -361,29 +352,22 @@ export class EmpleadoHorarioComponent implements OnInit {
     if (!this.empleadoId) return;
 
     this.exCargandoDia = true;
-    
 
+    // ✅ ya retorna excepcion del día (backend corrigido)
     this.servicioHorarios
       .dia(this.empleadoId, this.exFecha)
-      .pipe(
-        finalize(() => {
-          this.exCargandoDia = false;
-          
-        }),
-      )
+      .pipe(finalize(() => (this.exCargandoDia = false)))
       .subscribe({
         next: (resp) => {
           this.exActual = resp?.excepcion || null;
 
           if (this.exActual) {
-            // Rellenamos el formulario con lo que hay
             this.exTipo = this.exActual.tipo || 'Horario especial';
             this.exEsLaborable = !!this.exActual.es_laborable;
             this.exHoraInicio = this.exActual.hora_inicio || null;
             this.exHoraFin = this.exActual.hora_fin || null;
             this.exObservacion = this.exActual.observacion || '';
           } else {
-            // Limpiamos (pero dejamos tipo por defecto)
             this.exTipo = 'Horario especial';
             this.exEsLaborable = true;
             this.exHoraInicio = null;
@@ -401,7 +385,6 @@ export class EmpleadoHorarioComponent implements OnInit {
   guardarExcepcion() {
     if (this.exGuardando) return;
 
-    // Si ya hay excepción para esa fecha, obligamos a eliminar primero
     if (this.exActual) {
       Swal.fire({
         icon: 'warning',
@@ -424,7 +407,6 @@ export class EmpleadoHorarioComponent implements OnInit {
       return;
     }
 
-    // Validaciones cuando es día laborable con horario especial
     if (this.exEsLaborable) {
       if ((this.exHoraInicio && !this.exHoraFin) || (!this.exHoraInicio && this.exHoraFin)) {
         Swal.fire({
@@ -450,7 +432,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     }
 
     const payload = {
-      fecha: this.exFecha,
+      fecha: this.exFecha, // ✅ string YYYY-MM-DD
       tipo: this.exTipo,
       es_laborable: this.exEsLaborable,
       hora_inicio: this.exEsLaborable ? this.exHoraInicio : null,
@@ -459,16 +441,10 @@ export class EmpleadoHorarioComponent implements OnInit {
     };
 
     this.exGuardando = true;
-    
 
     this.servicioHorarios
       .addExcepcion(this.empleadoId, payload)
-      .pipe(
-        finalize(() => {
-          this.exGuardando = false;
-          
-        }),
-      )
+      .pipe(finalize(() => (this.exGuardando = false)))
       .subscribe({
         next: () => {
           Swal.fire({
@@ -509,16 +485,10 @@ export class EmpleadoHorarioComponent implements OnInit {
       if (!res.isConfirmed) return;
 
       this.exGuardando = true;
-      
 
       this.servicioHorarios
         .eliminarExcepcion(this.exActual.id)
-        .pipe(
-          finalize(() => {
-            this.exGuardando = false;
-            
-          }),
-        )
+        .pipe(finalize(() => (this.exGuardando = false)))
         .subscribe({
           next: () => {
             Swal.fire({

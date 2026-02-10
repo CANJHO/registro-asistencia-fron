@@ -180,7 +180,7 @@
           <div class="ex-chip">{{ exActual.tipo }}</div>
 
           <p>
-            <strong>Fecha:</strong> {{ exActual.fecha | date:'dd/MM/yyyy' }}
+            <strong>Fecha:</strong> {{ formatFechaUI(exActual?.fecha) }}
           </p>
           <p>
             <strong>Día laborable:</strong>
