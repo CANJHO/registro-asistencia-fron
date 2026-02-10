@@ -29,9 +29,7 @@
   <!-- GRID SEMANAL -->
   <div class="semana-grid">
     <div class="dia-card" *ngFor="let d of semana">
-      <div class="dia-titulo">
-        {{ d.nombreDia }}
-      </div>
+      <div class="dia-titulo">{{ d.nombreDia }}</div>
 
       <label class="toggle-linea">
         <input type="checkbox" [(ngModel)]="d.es_descanso" (change)="toggleDescanso(d)" />
@@ -39,7 +37,7 @@
       </label>
 
       <div class="turnos" *ngIf="!d.es_descanso">
-        <!-- TURNO 1 -->
+
         <div class="turno-bloque">
           <div class="turno-titulo">Turno 1</div>
           <div class="turno-campos">
@@ -54,7 +52,6 @@
           </div>
         </div>
 
-        <!-- TURNO 2 -->
         <div class="turno-bloque">
           <div class="turno-titulo">Turno 2</div>
           <div class="turno-campos">
@@ -69,18 +66,13 @@
           </div>
         </div>
 
-        <!-- TOLERANCIA -->
         <div class="tolerancia-bloque">
           <label>
             Tolerancia (min):
-            <input
-              type="number"
-              min="0"
-              max="60"
-              [(ngModel)]="d.tolerancia_min"
-            />
+            <input type="number" min="0" max="60" [(ngModel)]="d.tolerancia_min" />
           </label>
         </div>
+
       </div>
     </div>
   </div>
@@ -102,6 +94,7 @@
     </div>
 
     <div class="excepciones-body">
+
       <!-- LADO IZQUIERDO: FORMULARIO -->
       <div class="ex-form">
         <div class="campo">
@@ -161,7 +154,7 @@
         </div>
       </div>
 
-      <!-- LADO DERECHO: LISTADO DE EXCEPCIONES REGISTRADAS -->
+      <!-- LADO DERECHO: SOLO LISTA DE EXCEPCIONES EXISTENTES -->
       <div class="ex-estado">
         <h4 class="ex-lista-titulo">Excepciones registradas</h4>
 
@@ -178,16 +171,10 @@
             class="ex-item"
             *ngFor="let ex of exLista"
             (click)="seleccionarExcepcionEnLista(ex)"
-            title="Click para cargar esta fecha en el formulario"
+            title="Click para cargar esta excepción en el formulario"
           >
-            <div class="ex-item__fecha">
-              {{ formatFechaUI(ex.fecha) }}
-            </div>
-
-            <div class="ex-item__tipo">
-              {{ ex.tipo }}
-            </div>
-
+            <div class="ex-item__fecha">{{ formatFechaUI(ex.fecha) }}</div>
+            <div class="ex-item__tipo">{{ ex.tipo }}</div>
             <div class="ex-item__badge" [class.no-laborable]="!ex.es_laborable">
               {{ ex.es_laborable ? 'Laborable' : 'Descanso' }}
             </div>
@@ -195,6 +182,7 @@
         </div>
 
       </div>
+
     </div>
   </div>
 

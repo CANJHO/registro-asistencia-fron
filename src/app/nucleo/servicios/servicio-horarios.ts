@@ -85,10 +85,7 @@ export class ServicioHorarios {
    * }
    */
   addExcepcion(usuarioId: string, payload: any): Observable<any> {
-    return this.http.post<any>(
-      `${this.urlBase}/excepcion/${usuarioId}`,
-      payload,
-    );
+    return this.http.post<any>(`${this.urlBase}/excepcion/${usuarioId}`, payload);
   }
 
   /**
@@ -97,5 +94,18 @@ export class ServicioHorarios {
    */
   eliminarExcepcion(id: string): Observable<any> {
     return this.http.delete<any>(`${this.urlBase}/excepcion/${id}`);
+  }
+
+  /**
+   * ✅ LISTAR EXCEPCIONES (para panel derecho)
+   * Backend sugerido: GET /horarios/excepciones/:usuarioId
+   * Opcional: ?desde=YYYY-MM-DD&hasta=YYYY-MM-DD
+   */
+  listarExcepciones(usuarioId: string, desde?: string, hasta?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+
+    return this.http.get<any[]>(`${this.urlBase}/excepciones/${usuarioId}`, { params });
   }
 }
