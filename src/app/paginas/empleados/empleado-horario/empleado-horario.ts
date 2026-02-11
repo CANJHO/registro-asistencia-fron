@@ -35,12 +35,7 @@ export class EmpleadoHorarioComponent implements OnInit {
   guardando = false;
   errorCarga = false;
 
-  // Historial
-  mostrandoHistorial = false;
-  cargandoHistorial = false;
-  historial: any[] = [];
-
-  // ✅ Fecha local (NO UTC)
+  // Fecha vigencia
   fechaReferencia = this.todayKey();
 
   // Semana
@@ -70,7 +65,6 @@ export class EmpleadoHorarioComponent implements OnInit {
   exGuardando = false;
   exActual: any | null = null;
 
-  // ✅ LISTA (para panel derecho)
   exListaCargando = false;
   exLista: any[] = [];
 
@@ -92,7 +86,7 @@ export class EmpleadoHorarioComponent implements OnInit {
   formatFechaUI(fecha?: string | null): string {
     if (!fecha || typeof fecha !== 'string') return '';
     const m = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return fecha;
+    if (!m) return fecha; // si viniera raro, al menos muestra algo
     return `${m[3]}/${m[2]}/${m[1]}`;
   }
 
@@ -109,10 +103,10 @@ export class EmpleadoHorarioComponent implements OnInit {
     this.cargarResumenEmpleado();
     this.cargarHorarioVigente();
 
-    // ✅ Cargar excepción del día actual (solo inicial)
+    // Excepciones: inicial
     this.cargarExcepcionDelDia();
 
-    // ✅ Panel derecho: cargar vigentes (desde hoy)
+    // Panel derecho: desde HOY
     this.cargarListaExcepciones();
   }
 
@@ -295,11 +289,11 @@ export class EmpleadoHorarioComponent implements OnInit {
   // EXCEPCIONES
   // ==========================
 
-  /**
-   * ✅ IMPORTANTE:
-   * - YA NO SE LLAMA AL CAMBIAR LA FECHA.
-   * - Solo se llama al iniciar, o al seleccionar desde la lista, o al guardar/eliminar.
-   */
+  // ✅ Esto hace que aparezca el botón eliminar cuando la fecha ya tiene excepción
+  onCambioFechaExcepcion() {
+    this.cargarExcepcionDelDia();
+  }
+
   private cargarExcepcionDelDia() {
     if (!this.empleadoId) return;
 
@@ -327,13 +321,12 @@ export class EmpleadoHorarioComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error('Error obteniendo horario del día', err);
+          console.error('Error obteniendo excepción del día', err);
           this.exActual = null;
         },
       });
   }
 
-  // ✅ LISTA DERECHA: vigentes desde HOY (se muestra siempre hasta que pase el día)
   private cargarListaExcepciones() {
     if (!this.empleadoId) return;
 
@@ -342,7 +335,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     const hoy = this.todayKey();
 
     this.servicioHorarios
-      .listarExcepciones(this.empleadoId, hoy) // ✅ desde hoy
+      .listarExcepciones(this.empleadoId, hoy)
       .pipe(finalize(() => (this.exListaCargando = false)))
       .subscribe({
         next: (rows) => {
@@ -357,11 +350,10 @@ export class EmpleadoHorarioComponent implements OnInit {
       });
   }
 
-  // ✅ click en lista derecha: carga esa fecha en el formulario (y recién consulta detalle)
   seleccionarExcepcionEnLista(ex: any) {
     if (!ex?.fecha) return;
     this.exFecha = ex.fecha;
-    this.cargarExcepcionDelDia(); // ✅ SOLO AQUÍ consulta por fecha
+    this.cargarExcepcionDelDia();
   }
 
   guardarExcepcion() {
@@ -371,7 +363,7 @@ export class EmpleadoHorarioComponent implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Ya existe excepción',
-        text: 'Para esta fecha ya hay una excepción registrada. Elimínala primero si deseas volver a crearla.',
+        text: 'Para esta fecha ya hay una excepción registrada. Elimínala o edítala.',
         background: '#111',
         color: '#f5f5f5',
       });
@@ -394,7 +386,7 @@ export class EmpleadoHorarioComponent implements OnInit {
         Swal.fire({
           icon: 'warning',
           title: 'Horario incompleto',
-          text: 'Completa la hora de inicio y fin de la excepción o deja ambas en blanco.',
+          text: 'Completa la hora de inicio y fin o deja ambas en blanco.',
           background: '#111',
           color: '#f5f5f5',
         });
@@ -432,12 +424,10 @@ export class EmpleadoHorarioComponent implements OnInit {
           Swal.fire({
             icon: 'success',
             title: 'Excepción guardada',
-            text: 'La excepción de horario se registró correctamente.',
+            text: 'La excepción se registró correctamente.',
             background: '#111',
             color: '#f5f5f5',
           });
-
-          // ✅ refrescar detalle y LISTA derecha
           this.cargarExcepcionDelDia();
           this.cargarListaExcepciones();
         },
@@ -454,13 +444,54 @@ export class EmpleadoHorarioComponent implements OnInit {
       });
   }
 
+  actualizarExcepcionActual() {
+    if (!this.exActual?.id) return;
+
+    const payload = {
+      tipo: this.exTipo,
+      es_laborable: this.exEsLaborable,
+      hora_inicio: this.exEsLaborable ? this.exHoraInicio : null,
+      hora_fin: this.exEsLaborable ? this.exHoraFin : null,
+      observacion: this.exObservacion?.trim() || null,
+    };
+
+    this.exGuardando = true;
+
+    this.servicioHorarios
+      .actualizarExcepcion(this.exActual.id, payload)
+      .pipe(finalize(() => (this.exGuardando = false)))
+      .subscribe({
+        next: () => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Excepción actualizada',
+            text: 'Se actualizó correctamente.',
+            background: '#111',
+            color: '#f5f5f5',
+          });
+          this.cargarExcepcionDelDia();
+          this.cargarListaExcepciones();
+        },
+        error: (err) => {
+          console.error('Error actualizando excepción', err);
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo actualizar',
+            text: err?.error?.message || 'Ocurrió un error al actualizar la excepción.',
+            background: '#111',
+            color: '#f5f5f5',
+          });
+        },
+      });
+  }
+
   eliminarExcepcionActual() {
     if (!this.exActual) return;
 
     Swal.fire({
       icon: 'warning',
       title: 'Eliminar excepción',
-      text: '¿Seguro que deseas eliminar esta excepción? Luego podrás registrarla nuevamente corregida.',
+      text: '¿Seguro que deseas eliminar esta excepción?',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
@@ -479,12 +510,11 @@ export class EmpleadoHorarioComponent implements OnInit {
             Swal.fire({
               icon: 'success',
               title: 'Excepción eliminada',
-              text: 'Ahora puedes registrar la excepción nuevamente con los datos correctos.',
+              text: 'La excepción fue eliminada.',
               background: '#111',
               color: '#f5f5f5',
             });
 
-            // ✅ limpiar estado y formulario
             this.exActual = null;
             this.exTipo = 'Horario especial';
             this.exEsLaborable = true;
@@ -492,7 +522,6 @@ export class EmpleadoHorarioComponent implements OnInit {
             this.exHoraFin = null;
             this.exObservacion = '';
 
-            // ✅ refrescar detalle (por si el día seleccionado tiene otra) y lista derecha
             this.cargarExcepcionDelDia();
             this.cargarListaExcepciones();
           },
@@ -509,6 +538,7 @@ export class EmpleadoHorarioComponent implements OnInit {
         });
     });
   }
+
   volverAEmpleado() {
     this.router.navigate(['/panel/empleados', this.empleadoId]);
   }

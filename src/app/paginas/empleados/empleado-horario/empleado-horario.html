@@ -5,9 +5,7 @@
     <button class="btn-volver" (click)="volverAEmpleado()">← Volver</button>
 
     <div class="titulo-grupo">
-      <h2 class="titulo">
-        Horario del empleado
-      </h2>
+      <h2 class="titulo">Horario del empleado</h2>
 
       <div class="subtitulo" *ngIf="empleadoResumen">
         {{ empleadoResumen.nombre }} {{ empleadoResumen.apellido_paterno }} {{ empleadoResumen.apellido_materno }}
@@ -19,11 +17,7 @@
   <!-- FECHA DE VIGENCIA -->
   <div class="vigencia-box">
     <label>Vigente desde:</label>
-    <input
-      type="date"
-      [(ngModel)]="fechaReferencia"
-      (change)="cargarHorarioVigente()"
-    />
+    <input type="date" [(ngModel)]="fechaReferencia" (change)="cargarHorarioVigente()" />
   </div>
 
   <!-- GRID SEMANAL -->
@@ -84,7 +78,7 @@
     </button>
   </div>
 
-   <!-- ===================== -->
+  <!-- ===================== -->
   <!-- EXCEPCIONES POR FECHA -->
   <!-- ===================== -->
   <div class="excepciones-wrapper">
@@ -143,24 +137,35 @@
           ></textarea>
         </div>
 
-        <!-- ✅ INFO cuando ya existe excepción -->
+        <!-- INFO si ya existe -->
         <div *ngIf="exActual" class="ex-info-existente">
           Ya existe una excepción para <strong>{{ formatFechaUI(exFecha) }}</strong>.
-          Si deseas corregirla, elimínala y vuelve a registrarla.
+          Puedes editarla o eliminarla.
         </div>
 
         <div class="acciones-ex">
+          <!-- Guardar (solo si NO existe) -->
           <button
             class="btn-guardar-excepcion"
             type="button"
             (click)="guardarExcepcion()"
             [disabled]="exGuardando || !!exActual"
-            title="{{ exActual ? 'Ya existe excepción: elimínala para volver a crear' : '' }}"
           >
             {{ exGuardando ? 'Guardando...' : (exActual ? 'Ya existe excepción' : 'Guardar excepción') }}
           </button>
 
-          <!-- ✅ BOTÓN ELIMINAR (solo si existe) -->
+          <!-- Actualizar (solo si YA existe) -->
+          <button
+            *ngIf="exActual"
+            class="btn-guardar-excepcion"
+            type="button"
+            (click)="actualizarExcepcionActual()"
+            [disabled]="exGuardando"
+          >
+            {{ exGuardando ? 'Procesando...' : 'Actualizar excepción' }}
+          </button>
+
+          <!-- Eliminar -->
           <button
             *ngIf="exActual"
             class="btn-eliminar-excepcion"
@@ -173,7 +178,7 @@
         </div>
       </div>
 
-      <!-- LADO DERECHO: LISTA DE EXCEPCIONES EXISTENTES -->
+      <!-- LADO DERECHO: LISTA -->
       <div class="ex-estado">
         <h4 class="ex-lista-titulo">Excepciones registradas</h4>
 
@@ -190,7 +195,7 @@
             class="ex-item"
             *ngFor="let ex of exLista"
             (click)="seleccionarExcepcionEnLista(ex)"
-            title="Click para cargar esta excepción en el formulario"
+            title="Click para cargar esta excepción"
           >
             <div class="ex-item__fecha">{{ formatFechaUI(ex.fecha) }}</div>
             <div class="ex-item__tipo">{{ ex.tipo }}</div>
@@ -204,14 +209,13 @@
 
     </div>
   </div>
+
 </div>
 
-<!-- LOADING -->
 <div *ngIf="cargando" class="estado-cargando">
   Cargando horario...
 </div>
 
-<!-- ERROR -->
 <div *ngIf="!cargando && errorCarga" class="estado-error">
   Error cargando horario.
 </div>
