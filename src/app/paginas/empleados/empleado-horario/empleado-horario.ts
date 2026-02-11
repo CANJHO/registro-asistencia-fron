@@ -460,7 +460,7 @@ export class EmpleadoHorarioComponent implements OnInit {
     Swal.fire({
       icon: 'warning',
       title: 'Eliminar excepción',
-      text: '¿Seguro que deseas eliminar esta excepción?',
+      text: '¿Seguro que deseas eliminar esta excepción? Luego podrás registrarla nuevamente corregida.',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
@@ -479,13 +479,20 @@ export class EmpleadoHorarioComponent implements OnInit {
             Swal.fire({
               icon: 'success',
               title: 'Excepción eliminada',
-              text: 'La excepción fue eliminada correctamente.',
+              text: 'Ahora puedes registrar la excepción nuevamente con los datos correctos.',
               background: '#111',
               color: '#f5f5f5',
             });
-            this.exActual = null;
 
-            // ✅ refrescar detalle y LISTA derecha
+            // ✅ limpiar estado y formulario
+            this.exActual = null;
+            this.exTipo = 'Horario especial';
+            this.exEsLaborable = true;
+            this.exHoraInicio = null;
+            this.exHoraFin = null;
+            this.exObservacion = '';
+
+            // ✅ refrescar detalle (por si el día seleccionado tiene otra) y lista derecha
             this.cargarExcepcionDelDia();
             this.cargarListaExcepciones();
           },
@@ -494,7 +501,7 @@ export class EmpleadoHorarioComponent implements OnInit {
             Swal.fire({
               icon: 'error',
               title: 'No se pudo eliminar',
-              text: 'Ocurrió un error al eliminar la excepción.',
+              text: err?.error?.message || 'Ocurrió un error al eliminar la excepción.',
               background: '#111',
               color: '#f5f5f5',
             });
@@ -502,7 +509,6 @@ export class EmpleadoHorarioComponent implements OnInit {
         });
     });
   }
-
   volverAEmpleado() {
     this.router.navigate(['/panel/empleados', this.empleadoId]);
   }

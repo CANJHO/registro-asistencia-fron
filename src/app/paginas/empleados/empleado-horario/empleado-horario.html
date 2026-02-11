@@ -84,7 +84,7 @@
     </button>
   </div>
 
-  <!-- ===================== -->
+   <!-- ===================== -->
   <!-- EXCEPCIONES POR FECHA -->
   <!-- ===================== -->
   <div class="excepciones-wrapper">
@@ -97,11 +97,13 @@
 
       <!-- LADO IZQUIERDO: FORMULARIO -->
       <div class="ex-form">
+
         <div class="campo">
           <label>Fecha de la excepción</label>
           <input
             type="date"
             [(ngModel)]="exFecha"
+            (change)="onCambioFechaExcepcion()"
           />
         </div>
 
@@ -141,19 +143,37 @@
           ></textarea>
         </div>
 
+        <!-- ✅ INFO cuando ya existe excepción -->
+        <div *ngIf="exActual" class="ex-info-existente">
+          Ya existe una excepción para <strong>{{ formatFechaUI(exFecha) }}</strong>.
+          Si deseas corregirla, elimínala y vuelve a registrarla.
+        </div>
+
         <div class="acciones-ex">
           <button
             class="btn-guardar-excepcion"
             type="button"
             (click)="guardarExcepcion()"
+            [disabled]="exGuardando || !!exActual"
+            title="{{ exActual ? 'Ya existe excepción: elimínala para volver a crear' : '' }}"
+          >
+            {{ exGuardando ? 'Guardando...' : (exActual ? 'Ya existe excepción' : 'Guardar excepción') }}
+          </button>
+
+          <!-- ✅ BOTÓN ELIMINAR (solo si existe) -->
+          <button
+            *ngIf="exActual"
+            class="btn-eliminar-excepcion"
+            type="button"
+            (click)="eliminarExcepcionActual()"
             [disabled]="exGuardando"
           >
-            {{ exGuardando ? 'Guardando...' : 'Guardar excepción' }}
+            {{ exGuardando ? 'Procesando...' : 'Eliminar excepción' }}
           </button>
         </div>
       </div>
 
-      <!-- LADO DERECHO: SOLO LISTA DE EXCEPCIONES EXISTENTES -->
+      <!-- LADO DERECHO: LISTA DE EXCEPCIONES EXISTENTES -->
       <div class="ex-estado">
         <h4 class="ex-lista-titulo">Excepciones registradas</h4>
 
@@ -184,7 +204,6 @@
 
     </div>
   </div>
-
 </div>
 
 <!-- LOADING -->
