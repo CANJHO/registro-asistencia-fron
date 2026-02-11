@@ -172,7 +172,7 @@
             (click)="seleccionarExcepcionEnLista(ex)"
             title="Click para cargar esta excepción en el formulario"
           >
-            <div class="ex-item__fecha">{{ formatFechaUI(ex.fecha) }}</div>
+            <div class="ex-item__fecha">{{ex.fecha}}</div>
             <div class="ex-item__tipo">{{ ex.tipo }}</div>
             <div class="ex-item__badge" [class.no-laborable]="!ex.es_laborable">
               {{ ex.es_laborable ? 'Laborable' : 'Descanso' }}
