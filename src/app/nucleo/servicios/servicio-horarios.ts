@@ -1,13 +1,14 @@
-import { API_BASE_URL } from '../config/api.config';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
+import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServicioHorarios {
-  // Ajusta la URL base según tu .env / proxy si es distinto
+  // Base: /horarios
   private readonly urlBase = `${API_BASE_URL}/horarios`;
 
   constructor(private http: HttpClient) {}
@@ -18,13 +19,9 @@ export class ServicioHorarios {
    */
   dia(usuarioId: string, fecha?: string): Observable<any> {
     let params = new HttpParams();
-    if (fecha) {
-      params = params.set('fecha', fecha);
-    }
+    if (fecha) params = params.set('fecha', fecha);
 
-    return this.http.get<any>(`${this.urlBase}/dia/${usuarioId}`, {
-      params,
-    });
+    return this.http.get<any>(`${this.urlBase}/dia/${usuarioId}`, { params });
   }
 
   /**
@@ -33,13 +30,9 @@ export class ServicioHorarios {
    */
   vigente(usuarioId: string, fecha?: string): Observable<any[]> {
     let params = new HttpParams();
-    if (fecha) {
-      params = params.set('fecha', fecha);
-    }
+    if (fecha) params = params.set('fecha', fecha);
 
-    return this.http.get<any[]>(`${this.urlBase}/vigente/${usuarioId}`, {
-      params,
-    });
+    return this.http.get<any[]>(`${this.urlBase}/vigente/${usuarioId}`, { params });
   }
 
   /**
@@ -61,28 +54,15 @@ export class ServicioHorarios {
   /**
    * Cierra el horario vigente de un usuario a una fecha dada.
    * Backend: PUT /horarios/cerrar/:usuarioId
-   *
    * body: { fecha_fin: 'YYYY-MM-DD' }
    */
   cerrarVigencia(usuarioId: string, fecha_fin: string): Observable<any> {
-    return this.http.put<any>(`${this.urlBase}/cerrar/${usuarioId}`, {
-      fecha_fin,
-    });
+    return this.http.put<any>(`${this.urlBase}/cerrar/${usuarioId}`, { fecha_fin });
   }
 
   /**
    * Agregar excepción de horario para una fecha puntual.
    * Backend: POST /horarios/excepcion/:usuarioId
-   *
-   * body:
-   * {
-   *   fecha: 'YYYY-MM-DD',
-   *   tipo: string,
-   *   es_laborable: boolean,
-   *   hora_inicio?: string | null,
-   *   hora_fin?: string | null,
-   *   observacion?: string | null
-   * }
    */
   addExcepcion(usuarioId: string, payload: any): Observable<any> {
     return this.http.post<any>(`${this.urlBase}/excepcion/${usuarioId}`, payload);
@@ -97,9 +77,13 @@ export class ServicioHorarios {
   }
 
   /**
-   * ✅ LISTAR EXCEPCIONES (para panel derecho)
-   * Backend sugerido: GET /horarios/excepciones/:usuarioId
+   * ✅ LISTAR EXCEPCIONES (panel derecho)
+   * Backend: GET /horarios/excepciones/:usuarioId
    * Opcional: ?desde=YYYY-MM-DD&hasta=YYYY-MM-DD
+   *
+   * NOTA:
+   * - En el componente, llámalo con `desde = hoy` para que se vean siempre
+   *   las vigentes "desde hoy en adelante".
    */
   listarExcepciones(usuarioId: string, desde?: string, hasta?: string): Observable<any[]> {
     let params = new HttpParams();

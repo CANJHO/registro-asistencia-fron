@@ -109,10 +109,10 @@ export class EmpleadoHorarioComponent implements OnInit {
     this.cargarResumenEmpleado();
     this.cargarHorarioVigente();
 
-    // ✅ Cargar excepción del día actual (solo para tener exActual si lo necesitas)
+    // ✅ Cargar excepción del día actual (solo inicial)
     this.cargarExcepcionDelDia();
 
-    // ✅ Cargar LISTA de excepciones registradas (panel derecho)
+    // ✅ Panel derecho: cargar vigentes (desde hoy)
     this.cargarListaExcepciones();
   }
 
@@ -294,11 +294,12 @@ export class EmpleadoHorarioComponent implements OnInit {
   // ==========================
   // EXCEPCIONES
   // ==========================
-  onCambioFechaExcepcion() {
-    // solo carga el detalle de esa fecha (no lista)
-    this.cargarExcepcionDelDia();
-  }
 
+  /**
+   * ✅ IMPORTANTE:
+   * - YA NO SE LLAMA AL CAMBIAR LA FECHA.
+   * - Solo se llama al iniciar, o al seleccionar desde la lista, o al guardar/eliminar.
+   */
   private cargarExcepcionDelDia() {
     if (!this.empleadoId) return;
 
@@ -332,14 +333,16 @@ export class EmpleadoHorarioComponent implements OnInit {
       });
   }
 
-  // ✅ LISTA: carga todas las excepciones del empleado (panel derecho)
+  // ✅ LISTA DERECHA: vigentes desde HOY (se muestra siempre hasta que pase el día)
   private cargarListaExcepciones() {
     if (!this.empleadoId) return;
 
     this.exListaCargando = true;
 
+    const hoy = this.todayKey();
+
     this.servicioHorarios
-      .listarExcepciones(this.empleadoId) // 👈 este método debe existir en el servicio
+      .listarExcepciones(this.empleadoId, hoy) // ✅ desde hoy
       .pipe(finalize(() => (this.exListaCargando = false)))
       .subscribe({
         next: (rows) => {
@@ -354,11 +357,11 @@ export class EmpleadoHorarioComponent implements OnInit {
       });
   }
 
-  // ✅ click en lista derecha: carga esa fecha en el formulario
+  // ✅ click en lista derecha: carga esa fecha en el formulario (y recién consulta detalle)
   seleccionarExcepcionEnLista(ex: any) {
     if (!ex?.fecha) return;
-    this.exFecha = ex.fecha;        // carga fecha
-    this.onCambioFechaExcepcion();  // carga detalle (si quieres ver/editar/eliminar)
+    this.exFecha = ex.fecha;
+    this.cargarExcepcionDelDia(); // ✅ SOLO AQUÍ consulta por fecha
   }
 
   guardarExcepcion() {
