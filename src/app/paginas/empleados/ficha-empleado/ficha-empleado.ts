@@ -324,7 +324,7 @@ export class FichaEmpleadoComponent implements OnInit {
       // =======================
       // LOGO SUPERIOR
       // =======================
-      const logoUrl = '/logo_negro.png'; // en /public
+      const logoUrl = 'https://res.cloudinary.com/dl5skrfzw/image/upload/v1770768127/logo_negro_lwibom.png'; // en /public
       try {
         const logoDataUrl = await this.cargarImagenComoDataUrl(logoUrl);
         if (logoDataUrl) {
@@ -489,7 +489,7 @@ export class FichaEmpleadoComponent implements OnInit {
       const negro = '#111111';
 
       // ===== CABECERA (LOGO + TÍTULO) =====
-      const logoUrl = '/logo_negro.png';
+      const logoUrl = 'https://res.cloudinary.com/dl5skrfzw/image/upload/v1770768127/logo_negro_lwibom.png';
       const logoDataUrl = await this.cargarImagenComoDataUrl(logoUrl);
       let yActual = 15;
 
